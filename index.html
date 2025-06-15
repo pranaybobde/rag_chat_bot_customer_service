@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chatbot UI</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 10px;
+    }
+    #chatbox {
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      background: #f9f9f9;
+    }
+    .user, .bot {
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 5px;
+    }
+    .user {
+      text-align: right;
+      background-color: #e6f0ff;
+      color: #0066cc;
+    }
+    .bot {
+      text-align: left;
+      background-color: #eaffea;
+      color: #009933;
+    }
+    #inputRow {
+      display: flex;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 8px;
+    }
+    button {
+      padding: 8px 12px;
+      margin-left: 5px;
+    }
+    ul {
+      margin: 5px 0 0 0;
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Simple Chatbot UI</h2>
+
+<div id="chatbox"></div>
+
+<div id="inputRow">
+  <input type="text" id="messageInput" placeholder="Type your message..." onkeypress="handleKey(event)" />
+  <button onclick="sendMessage()">Send</button>
+</div>
+
+<script>
+async function sendMessage() {
+  const input = document.getElementById('messageInput');
+  const chatbox = document.getElementById('chatbox');
+  const message = input.value.trim();
+  
+  if (!message) return;
+
+  // Show user message
+  chatbox.innerHTML += `<div class="user"><strong>You:</strong> ${message}</div>`;
+  chatbox.scrollTop = chatbox.scrollHeight;
+  input.value = '';
+
+  try {
+    const response = await fetch("http://localhost:8005/chat/", {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    });
+
+    if (!response.ok) throw new Error(`Error: ${response.status}`);
+
+    const data = await response.json();
+
+    // If bot response is a structured complaint object
+    if (data.response && typeof data.response === 'object' && data.response.complaintId) {
+      const { complaintId, name, phone, email, details, createdAt } = data.response;
+chatbox.innerHTML += `
+  <div class="bot">
+    <strong>Bot:</strong> Here are the complaint details:
+    <ul>
+      <li><strong>Complaint ID:</strong> ${complaintId}</li>
+      <li><strong>Name:</strong> ${name}</li>
+      <li><strong>Phone:</strong> ${phone}</li>
+      <li><strong>Email:</strong> ${email}</li>
+      <li><strong>Details:</strong> ${details}</li>
+      <li><strong>Created At:</strong> ${new Date(createdAt).toLocaleString()}</li>
+    </ul>
+  </div>
+`;
+    } else {
+      // Regular text response
+      chatbox.innerHTML += `<div class="bot"><strong>Bot:</strong> ${data.response}</div>`;
+    }
+
+    chatbox.scrollTop = chatbox.scrollHeight;
+
+  } catch (err) {
+    chatbox.innerHTML += `<div class="bot"><strong>Bot:</strong> Sorry, an error occurred.</div>`;
+    console.error(err);
+  }
+}
+
+function handleKey(event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    sendMessage();
+  }
+}
+</script>
+
+</body>
+</html>
