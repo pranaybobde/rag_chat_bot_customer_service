@@ -1,0 +1,10 @@
+chromadb
+google-genai
+groq
+aiohttp
+fastapi
+uvicorn
+requests
+dotenv
+sentence-transformers
+sqlalchemy
